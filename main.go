@@ -10,12 +10,12 @@ import (
 func main() {
 	router := gin.Default()
 
-	router.POST("/api/v1/getPassword", getPassword)
+	router.POST("/api/v1/getPassword", GetPassword)
 
 	router.Run(":8080")
 }
 
-func getPassword(c *gin.Context) {
+func GetPassword(c *gin.Context) {
 	var data struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
