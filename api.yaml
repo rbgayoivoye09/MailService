@@ -1,0 +1,34 @@
+version: 1.0
+paths:
+  /api/v1/getPassword:
+    post:
+      summary: Get password
+      description: Get password
+      operationId: getPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResponse"
+components:
+  schemas:
+    PasswordRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    PasswordResponse:
+      type: object
+      properties:
+        result:
+          type: string
