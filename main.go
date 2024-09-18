@@ -65,7 +65,13 @@ func GetPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Server must be an IMAP server"})
 	}
 
-	encodedPassword := base64.StdEncoding.EncodeToString([]byte(Usage(a)))
+	secr, err := Usage(a)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	encodedPassword := base64.StdEncoding.EncodeToString([]byte(secr))
 
 	c.JSON(http.StatusOK, gin.H{"result": encodedPassword})
 }
@@ -88,7 +94,8 @@ func NewImapClient(username, password, server string) (*client.Client, error) {
 	// 连接邮件服务器
 	c, err := client.DialTLS(server, nil)
 	if err != nil {
-		//Logger.Sugar().Fatal(err)
+		Logger.Sugar().Fatal(err)
+		return nil, err
 	}
 	//Logger.Sugar().Info("Connected")
 
@@ -102,9 +109,12 @@ func NewImapClient(username, password, server string) (*client.Client, error) {
 	return c, nil
 }
 
-func Usage(cmail Mail) (pass string) {
+func Usage(cmail Mail) (pass string, err error) {
 	// 连接邮件服务器
 	c, err := CustomerImapClient(cmail.Name, cmail.Password, cmail.Server)
+	if err != nil {
+		return "", err
+	}
 
 	// 查看有什么邮箱
 	mailboxes := make(chan *imap.MailboxInfo, 10)
@@ -229,12 +239,12 @@ func Usage(cmail Mail) (pass string) {
 					}
 				}
 				slog.Info("已找到满足需求的邮件")
-				return pass
+				return pass, nil
 			}
 		}
 	}
 
-	return pass
+	return pass, nil
 }
 
 func pop(list *[]uint32) uint32 {
