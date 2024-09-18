@@ -27,9 +27,21 @@ var Logger *zap.Logger
 func main() {
 	router := gin.Default()
 
+	// 添加 CORS 中间件
+	router.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	})
+
 	router.POST("/api/v1/getPassword", GetPassword)
 
-	router.Run(":8080")
+	router.Run(":18080")
 }
 
 func GetPassword(c *gin.Context) {
@@ -43,7 +55,6 @@ func GetPassword(c *gin.Context) {
 		return
 	}
 
-
 	a := Mail{
 		Name:     data.Username,
 		Password: data.Password,
@@ -54,16 +65,10 @@ func GetPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Server must be an IMAP server"})
 	}
 
-	
-
 	encodedPassword := base64.StdEncoding.EncodeToString([]byte(Usage(a)))
 
 	c.JSON(http.StatusOK, gin.H{"result": encodedPassword})
 }
-
-
-
-
 
 // CustomerImapClient 调用NewImapClient
 func CustomerImapClient(name, password, server string) (*client.Client, error) {
@@ -97,10 +102,9 @@ func NewImapClient(username, password, server string) (*client.Client, error) {
 	return c, nil
 }
 
-func Usage(cmail Mail) (pass string){
+func Usage(cmail Mail) (pass string) {
 	// 连接邮件服务器
 	c, err := CustomerImapClient(cmail.Name, cmail.Password, cmail.Server)
-
 
 	// 查看有什么邮箱
 	mailboxes := make(chan *imap.MailboxInfo, 10)
@@ -167,8 +171,8 @@ func Usage(cmail Mail) (pass string){
 				if err = c.Fetch(seqset,
 					[]imap.FetchItem{imap.FetchRFC822},
 					chanMsg); err != nil {
-						slog.Info(seqset.String())
-						slog.Info(err.Error())
+					slog.Info(seqset.String())
+					slog.Info(err.Error())
 				}
 			}()
 
@@ -200,8 +204,8 @@ func Usage(cmail Mail) (pass string){
 					slog.Info(err.Error())
 				}
 
-				switch  p.Header.(type) {
-				case  *mail.InlineHeader:
+				switch p.Header.(type) {
+				case *mail.InlineHeader:
 					// This is the message's text (can be plain-text or HTML)
 					// 获取正文内容, text或者html
 					b, _ := io.ReadAll(p.Body)
